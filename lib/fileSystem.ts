@@ -2,6 +2,7 @@ import { Paths, Directory, File } from 'expo-file-system';
 import { parseCubeLUT, ParsedLUT } from './lutParser';
 
 const LUTS_DIRECTORY = new Directory(Paths.document, 'LUTs');
+const LUT_IMAGES_DIRECTORY = new Directory(Paths.document, 'LUT_Images');
 const PHOTOS_DIRECTORY = new Directory(Paths.document, 'Photos');
 const THUMBNAILS_DIRECTORY = new Directory(Paths.document, 'Thumbnails');
 
@@ -10,6 +11,10 @@ export async function initFileSystem(): Promise<void> {
     if (!LUTS_DIRECTORY.exists) {
       LUTS_DIRECTORY.create();
       console.log('LUTs directory created');
+    }
+    if (!LUT_IMAGES_DIRECTORY.exists) {
+      LUT_IMAGES_DIRECTORY.create();
+      console.log('LUT Images directory created');
     }
     if (!PHOTOS_DIRECTORY.exists) {
       PHOTOS_DIRECTORY.create();
@@ -66,6 +71,33 @@ export async function loadLUTData(path: string): Promise<ParsedLUT> {
   }
 }
 
+export async function saveLUTImage(imageData: Uint8Array, lutId: number): Promise<string> {
+  try {
+    const fileName = `lut_${lutId}.bin`;
+    const targetFile = new File(LUT_IMAGES_DIRECTORY, fileName);
+    
+    // Save the raw image data
+    await targetFile.write(imageData);
+    
+    console.log('LUT image saved:', targetFile.uri);
+    return targetFile.uri;
+  } catch (error) {
+    console.error('Error saving LUT image:', error);
+    throw error;
+  }
+}
+
+export async function loadLUTImage(imagePath: string): Promise<Uint8Array> {
+  try {
+    const file = new File(imagePath);
+    const data = await file.bytes();
+    return data;
+  } catch (error) {
+    console.error('Error loading LUT image:', error);
+    throw error;
+  }
+}
+
 export async function deleteLUTFile(path: string): Promise<void> {
   try {
     const file = new File(path);
@@ -103,35 +135,38 @@ export async function cleanupOrphanedFiles(validPaths: string[]): Promise<void> 
   }
 }
 
-// HEIF image conversion
+// Image conversion - Convert all images to PNG for consistent processing
 export async function convertImageIfNeeded(uri: string): Promise<string> {
   try {
-    // Check if the image is HEIF/HEIC format by file extension or mime type
-    const isHEIF = uri.toLowerCase().match(/\.(heif|heic)$/i);
+    // Check if the image is already a PNG
+    const isPNG = uri.toLowerCase().match(/\.png$/i);
     
-    if (isHEIF) {
-      console.log('Converting HEIF image to PNG...');
-      
-      // Lazy import to avoid loading at module initialization
-      const ImageManipulator = await import('expo-image-manipulator');
-      
-      // Convert to PNG with maximum quality
-      const result = await ImageManipulator.manipulateAsync(
-        uri,
-        [], // No transformations, just format conversion
-        {
-          compress: 1, // Maximum quality
-          format: ImageManipulator.SaveFormat.PNG,
-        }
-      );
-      
-      console.log('HEIF converted to PNG:', result.uri);
-      return result.uri;
+    if (isPNG) {
+      console.log('Image is already PNG, skipping conversion');
+      return uri;
     }
     
-    return uri; // Return original URI if not HEIF
+    // Convert all non-PNG images (HEIF, HEIC, JPEG, etc.) to PNG
+    // This ensures consistent behavior and avoids Skia compatibility issues
+    console.log('Converting image to PNG...');
+    
+    // Lazy import to avoid loading at module initialization
+    const { manipulateAsync, SaveFormat } = await import('expo-image-manipulator');
+    
+    // Convert to PNG with maximum quality
+    const result = await manipulateAsync(
+      uri,
+      [], // No transformations, just format conversion
+      {
+        compress: 1, // Maximum quality
+        format: SaveFormat.PNG,
+      }
+    );
+    
+    console.log('Image converted to PNG:', result.uri);
+    return result.uri;
   } catch (error) {
-    console.error('Error converting HEIF image:', error);
+    console.error('Error converting image:', error);
     throw error;
   }
 }

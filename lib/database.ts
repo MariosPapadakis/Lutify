@@ -4,6 +4,7 @@ export interface LUT {
   id: number;
   name: string;
   path: string;
+  imagePath: string; // Path to pre-converted LUT image
   size: number;
   domainMin: string; // JSON stringified array
   domainMax: string; // JSON stringified array
@@ -45,12 +46,23 @@ export async function initDatabase(): Promise<void> {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         path TEXT NOT NULL,
+        imagePath TEXT NOT NULL DEFAULT '',
         size INTEGER NOT NULL,
         domainMin TEXT NOT NULL,
         domainMax TEXT NOT NULL,
         createdAt TEXT NOT NULL
       );
     `);
+    
+    // Migration: Add imagePath column if it doesn't exist
+    try {
+      await db.execAsync(`
+        ALTER TABLE LUTs ADD COLUMN imagePath TEXT NOT NULL DEFAULT '';
+      `);
+      console.log('Added imagePath column to LUTs table');
+    } catch (error) {
+      // Column might already exist, ignore error
+    }
     
     // Create Settings table
     await db.execAsync(`
@@ -91,6 +103,7 @@ export async function initDatabase(): Promise<void> {
 export async function insertLUT(
   name: string,
   path: string,
+  imagePath: string,
   size: number,
   domainMin: [number, number, number],
   domainMax: [number, number, number]
@@ -99,8 +112,8 @@ export async function insertLUT(
   
   const createdAt = new Date().toISOString();
   const result = await db.runAsync(
-    'INSERT INTO LUTs (name, path, size, domainMin, domainMax, createdAt) VALUES (?, ?, ?, ?, ?, ?)',
-    [name, path, size, JSON.stringify(domainMin), JSON.stringify(domainMax), createdAt]
+    'INSERT INTO LUTs (name, path, imagePath, size, domainMin, domainMax, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    [name, path, imagePath, size, JSON.stringify(domainMin), JSON.stringify(domainMax), createdAt]
   );
   
   return result.lastInsertRowId;
@@ -118,6 +131,18 @@ export async function getLUTById(id: number): Promise<LUT | null> {
   
   const result = await db.getFirstAsync<LUT>('SELECT * FROM LUTs WHERE id = ?', [id]);
   return result || null;
+}
+
+export async function updateLUTImagePath(id: number, imagePath: string): Promise<void> {
+  if (!db) throw new Error('Database not initialized');
+  
+  await db.runAsync('UPDATE LUTs SET imagePath = ? WHERE id = ?', [imagePath, id]);
+}
+
+export async function updateLUTName(id: number, name: string): Promise<void> {
+  if (!db) throw new Error('Database not initialized');
+  
+  await db.runAsync('UPDATE LUTs SET name = ? WHERE id = ?', [name, id]);
 }
 
 export async function deleteLUT(id: number): Promise<void> {

@@ -1,5 +1,6 @@
 import { Tabs } from 'expo-router';
 import { Text } from 'react-native';
+import Symbol from '../../components/Symbol';
 import Colors from '../../constants/Colors';
 
 export default function TabLayout() {
@@ -25,15 +26,36 @@ export default function TabLayout() {
           letterSpacing: -0.2,
         },
         headerShadowVisible: false,
+        animation: 'shift'
       }}
     >
       <Tabs.Screen
         name="Home"
         options={{
           headerShown: false,
-          tabBarLabel: 'Home',
+          tabBarLabel: 'Library',
           tabBarIcon: ({ color }) => (
-            <Text style={{ fontSize: 11, color, fontWeight: '500' }}>■</Text>
+            <Symbol 
+              name="photo.on.rectangle" 
+              size={22}
+              tintColor={color}
+              fallback={<Text style={{ fontSize: 11, color, fontWeight: '500' }}>📷</Text>}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="Explore"
+        options={{
+          headerShown: false,
+          tabBarLabel: 'Explore',
+          tabBarIcon: ({ color }) => (
+            <Symbol 
+              name="sparkles" 
+              size={22}
+              tintColor={color}
+              fallback={<Text style={{ fontSize: 11, color, fontWeight: '500' }}>◉</Text>}
+            />
           ),
         }}
       />
@@ -41,9 +63,29 @@ export default function TabLayout() {
         name="Library"
         options={{
           headerShown: false,
-          tabBarLabel: 'Library',
+          tabBarLabel: 'LUTed',
           tabBarIcon: ({ color }) => (
-            <Text style={{ fontSize: 11, color, fontWeight: '500' }}>⊞</Text>
+            <Symbol 
+              name="photo.badge.checkmark.fill" 
+              size={22}
+              tintColor={color}
+              fallback={<Text style={{ fontSize: 11, color, fontWeight: '500' }}>✓</Text>}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="Settings"
+        options={{
+          headerShown: false,
+          tabBarLabel: 'Settings',
+          tabBarIcon: ({ color }) => (
+            <Symbol 
+              name="gearshape.fill" 
+              size={22}
+              tintColor={color}
+              fallback={<Text style={{ fontSize: 11, color, fontWeight: '500' }}>⚙</Text>}
+            />
           ),
         }}
       />

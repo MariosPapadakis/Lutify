@@ -47,6 +47,7 @@ import {
 import { createLUTShader, convertCubeLUTToImageData, RenderParams } from '../lib/skiaRenderer';
 import Slider from '../components/Slider';
 import Button from '../components/Button';
+import Symbol from '../components/Symbol';
 import Colors from '../constants/Colors';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -83,6 +84,7 @@ export default function EditorScreen() {
   );
   const [showOriginal, setShowOriginal] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [allowNavigation, setAllowNavigation] = useState(false);
   
   // Render parameters
   const [strength, setStrength] = useState(DEFAULT_STRENGTH);
@@ -123,6 +125,9 @@ export default function EditorScreen() {
       tint !== DEFAULT_TINT
     );
   }, [strength, exposure, contrast, saturation, temperature, tint]);
+  
+  // Should prevent navigation
+  const shouldPreventNavigation = hasChanges && !allowNavigation;
   
   // Create LUT image from data
   const lutImage = useMemo(() => {
@@ -185,9 +190,19 @@ export default function EditorScreen() {
       const lut = await getLUTById(editedPhoto.lutId);
       if (lut) {
         setLutName(lut.name);
-        const lutData = await loadLUTData(lut.path);
-        const imageData = convertCubeLUTToImageData(lutData.data, lutData.size);
-        setLutImageData(imageData);
+        
+        // Load pre-converted LUT image if available, otherwise convert on-the-fly
+        if (lut.imagePath) {
+          const { loadLUTImage } = await import('../lib/fileSystem');
+          const imageData = await loadLUTImage(lut.imagePath);
+          // Reconstruct the image data object (512x512 for 64-size LUT)
+          setLutImageData({ data: imageData, width: 512, height: 512 });
+        } else {
+          // Fallback: convert on-the-fly (for old LUTs without imagePath)
+          const lutData = await loadLUTData(lut.path);
+          const imageData = convertCubeLUTToImageData(lutData.data, lutData.size);
+          setLutImageData(imageData);
+        }
       }
       
       // Load saved adjustments
@@ -218,12 +233,20 @@ export default function EditorScreen() {
       
       setLutName(lut.name);
       
-      // Load LUT data and convert to image
-      const lutData = await loadLUTData(lut.path);
-      const imageData = convertCubeLUTToImageData(lutData.data, lutData.size);
-      setLutImageData(imageData);
-      
-      console.log('LUT loaded and converted to image:', lut.name);
+      // Load pre-converted LUT image if available, otherwise convert on-the-fly
+      if (lut.imagePath) {
+        const { loadLUTImage } = await import('../lib/fileSystem');
+        const imageData = await loadLUTImage(lut.imagePath);
+        // Reconstruct the image data object (512x512 for 64-size LUT)
+        setLutImageData({ data: imageData, width: 512, height: 512 });
+        console.log('LUT image loaded from cache:', lut.name);
+      } else {
+        // Fallback: convert on-the-fly (for old LUTs without imagePath)
+        const lutData = await loadLUTData(lut.path);
+        const imageData = convertCubeLUTToImageData(lutData.data, lutData.size);
+        setLutImageData(imageData);
+        console.log('LUT converted on-the-fly:', lut.name);
+      }
     } catch (error) {
       console.error('Error loading LUT:', error);
       Alert.alert('Error', 'Failed to load LUT');
@@ -241,9 +264,12 @@ export default function EditorScreen() {
             text: 'Discard',
             style: 'destructive',
             onPress: () => {
-              if (photoUri) {
-                router.push(`/lut-picker?photoUri=${encodeURIComponent(photoUri)}`);
-              }
+              setAllowNavigation(true);
+              setTimeout(() => {
+                if (photoUri) {
+                  router.push(`/lut-picker?photoUri=${encodeURIComponent(photoUri)}`);
+                }
+              }, 0);
             },
           },
         ]
@@ -257,7 +283,7 @@ export default function EditorScreen() {
   
   // Handle hardware back button and navigation back
   const handleBackPress = useCallback(() => {
-    if (hasChanges) {
+    if (hasChanges && !allowNavigation) {
       Alert.alert(
         'Discard Changes?',
         'You have unsaved changes. Are you sure you want to discard them?',
@@ -266,17 +292,20 @@ export default function EditorScreen() {
           {
             text: 'Discard',
             style: 'destructive',
-            onPress: () => router.back(),
+            onPress: () => {
+              setAllowNavigation(true);
+              setTimeout(() => router.back(), 0);
+            },
           },
         ]
       );
       return true; // Prevent default back behavior
     }
     return false; // Allow default back behavior
-  }, [hasChanges, router]);
+  }, [hasChanges, allowNavigation, router]);
   
   // Prevent navigation when there are unsaved changes
-  usePreventRemove(hasChanges, ({ data }) => {
+  usePreventRemove(shouldPreventNavigation, ({ data }) => {
     Alert.alert(
       'Discard Changes?',
       'You have unsaved changes. Are you sure you want to discard them?',
@@ -285,7 +314,10 @@ export default function EditorScreen() {
         {
           text: 'Discard',
           style: 'destructive',
-          onPress: () => router.back(),
+          onPress: () => {
+            setAllowNavigation(true);
+            setTimeout(() => router.back(), 0);
+          },
         },
       ]
     );
@@ -661,7 +693,13 @@ export default function EditorScreen() {
               style={styles.fullscreenCloseButton}
               onPress={() => setIsFullscreen(false)}
             >
-              <Text style={styles.fullscreenCloseText}>✕</Text>
+              <Symbol 
+                name="xmark.circle.fill" 
+                size={36}
+                tintColor="rgba(255, 255, 255, 0.8)"
+                type="hierarchical"
+                fallback={<Text style={styles.fullscreenCloseText}>✕</Text>}
+              />
             </Pressable>
           </View>
         </GestureDetector>

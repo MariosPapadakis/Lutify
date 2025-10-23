@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions } from 'react-native';
+import Symbol from './Symbol';
 import { EditedPhoto } from '../lib/database';
 import Colors from '../constants/Colors';
 
@@ -29,7 +30,12 @@ export default function LibraryItem({ photo, onPress, onLongPress }: LibraryItem
         />
         {photo.isExported === 1 && (
           <View style={styles.exportBadge}>
-            <Text style={styles.exportIcon}>↗</Text>
+            <Symbol 
+              name="square.and.arrow.up.fill" 
+              size={14}
+              tintColor={Colors.dark.text}
+              fallback={<Text style={styles.exportIcon}>↗</Text>}
+            />
           </View>
         )}
       </View>

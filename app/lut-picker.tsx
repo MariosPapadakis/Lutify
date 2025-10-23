@@ -8,6 +8,9 @@ import {
   RefreshControl,
   Image,
   Dimensions,
+  TextInput,
+  Modal,
+  Pressable,
 } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
@@ -27,6 +30,9 @@ export default function LUTPickerScreen() {
   const [luts, setLuts] = useState<LUT[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [showNameDialog, setShowNameDialog] = useState(false);
+  const [lutName, setLutName] = useState('');
+  const [pendingLutData, setPendingLutData] = useState<any>(null);
   const router = useRouter();
   
   const loadLUTs = async () => {
@@ -49,6 +55,50 @@ export default function LUTPickerScreen() {
     setRefreshing(true);
     await loadLUTs();
     setRefreshing(false);
+  };
+  
+  const handleConfirmName = async () => {
+    if (!pendingLutData || !lutName.trim()) {
+      Alert.alert('Error', 'Please enter a name for the LUT');
+      return;
+    }
+    
+    try {
+      setShowNameDialog(false);
+      setLoading(true);
+      
+      // Insert into database first to get the ID
+      const lutId = await insertLUT(
+        lutName.trim(),
+        pendingLutData.savedPath,
+        '', // imagePath will be updated after saving
+        pendingLutData.size,
+        pendingLutData.domainMin,
+        pendingLutData.domainMax
+      );
+      
+      // Save the converted LUT image
+      const { saveLUTImage } = await import('../lib/fileSystem');
+      const imagePath = await saveLUTImage(pendingLutData.imageData.data, lutId);
+      
+      // Update the LUT with the image path
+      const { updateLUTImagePath } = await import('../lib/database');
+      await updateLUTImagePath(lutId, imagePath);
+      
+      // Reload list
+      await loadLUTs();
+      
+      // Clear pending data
+      setPendingLutData(null);
+      setLutName('');
+      
+      Alert.alert('Success', `LUT "${lutName.trim()}" imported successfully!`);
+    } catch (error) {
+      console.error('Error completing import:', error);
+      Alert.alert('Error', 'Failed to complete LUT import');
+    } finally {
+      setLoading(false);
+    }
   };
   
   const handleImportLUT = async () => {
@@ -91,20 +141,21 @@ export default function LUTPickerScreen() {
       // Save file to app directory
       const savedPath = await saveLUTFile(file.uri, file.name);
       
-      // Insert into database
-      const lutName = parsedLUT.title || file.name.replace('.cube', '');
-      await insertLUT(
-        lutName,
+      // Convert LUT to image format
+      const { convertCubeLUTToImageData } = await import('../lib/skiaRenderer');
+      const imageData = convertCubeLUTToImageData(parsedLUT.data, parsedLUT.size);
+      
+      // Prepare data for name dialog
+      const defaultName = parsedLUT.title || file.name.replace('.cube', '');
+      setLutName(defaultName);
+      setPendingLutData({
         savedPath,
-        parsedLUT.size,
-        parsedLUT.domainMin,
-        parsedLUT.domainMax
-      );
-      
-      // Reload list
-      await loadLUTs();
-      
-      Alert.alert('Success', `LUT "${lutName}" imported successfully!`);
+        imageData,
+        size: parsedLUT.size,
+        domainMin: parsedLUT.domainMin,
+        domainMax: parsedLUT.domainMax,
+      });
+      setShowNameDialog(true);
     } catch (error) {
       console.error('Error importing LUT:', error);
       Alert.alert('Error', 'Failed to import LUT file');
@@ -118,8 +169,16 @@ export default function LUTPickerScreen() {
       // Delete from database
       await deleteLUT(lut.id);
       
-      // Delete file
+      // Delete cube file
       await deleteLUTFile(lut.path);
+      
+      // Delete image file if it exists
+      if (lut.imagePath) {
+        const imageFile = new File(lut.imagePath);
+        if (imageFile.exists) {
+          imageFile.delete();
+        }
+      }
       
       // Reload list
       await loadLUTs();
@@ -131,6 +190,37 @@ export default function LUTPickerScreen() {
   
   const handleLUTPress = (lut: LUT) => {
     router.push(`/editor?photoUri=${encodeURIComponent(photoUri)}&lutId=${lut.id}`);
+  };
+  
+  const handleRenameLUT = (lut: LUT) => {
+    Alert.prompt(
+      'Rename LUT',
+      'Enter a new name for this LUT',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Rename',
+          onPress: async (newName) => {
+            if (!newName || !newName.trim()) {
+              Alert.alert('Error', 'Please enter a valid name');
+              return;
+            }
+            
+            try {
+              const { updateLUTName } = await import('../lib/database');
+              await updateLUTName(lut.id, newName.trim());
+              await loadLUTs();
+              Alert.alert('Success', 'LUT renamed successfully');
+            } catch (error) {
+              console.error('Error renaming LUT:', error);
+              Alert.alert('Error', 'Failed to rename LUT');
+            }
+          },
+        },
+      ],
+      'plain-text',
+      lut.name
+    );
   };
   
   const renderEmptyState = () => (
@@ -177,6 +267,7 @@ export default function LUTPickerScreen() {
               lut={item}
               onPress={() => handleLUTPress(item)}
               onDelete={() => handleDeleteLUT(item)}
+              onRename={() => handleRenameLUT(item)}
             />
           )}
           contentContainerStyle={[
@@ -206,6 +297,62 @@ export default function LUTPickerScreen() {
           />
         </View>
       )}
+      
+      {/* Name Dialog */}
+      <Modal
+        visible={showNameDialog}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          setShowNameDialog(false);
+          setPendingLutData(null);
+          setLutName('');
+        }}
+      >
+        <Pressable 
+          style={styles.modalOverlay}
+          onPress={() => {
+            setShowNameDialog(false);
+            setPendingLutData(null);
+            setLutName('');
+          }}
+        >
+          <Pressable style={styles.modalContent} onPress={(e) => e.stopPropagation()}>
+            <Text style={styles.modalTitle}>Name Your LUT</Text>
+            <Text style={styles.modalSubtitle}>Enter a name for this LUT</Text>
+            
+            <TextInput
+              style={styles.modalInput}
+              value={lutName}
+              onChangeText={setLutName}
+              placeholder="LUT Name"
+              placeholderTextColor={Colors.dark.textSecondary}
+              autoFocus
+              selectTextOnFocus
+            />
+            
+            <View style={styles.modalButtons}>
+              <Pressable
+                style={[styles.modalButton, styles.modalButtonCancel]}
+                onPress={() => {
+                  setShowNameDialog(false);
+                  setPendingLutData(null);
+                  setLutName('');
+                }}
+              >
+                <Text style={styles.modalButtonTextCancel}>Cancel</Text>
+              </Pressable>
+              
+              <Pressable
+                style={[styles.modalButton, styles.modalButtonConfirm]}
+                onPress={handleConfirmName}
+              >
+                <Text style={styles.modalButtonText}>Import</Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -282,6 +429,75 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: Colors.dark.border,
     backgroundColor: Colors.dark.background,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: Colors.dark.surface,
+    borderRadius: 16,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: Colors.dark.text,
+    marginBottom: 8,
+    letterSpacing: -0.3,
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: Colors.dark.textSecondary,
+    marginBottom: 20,
+    letterSpacing: -0.1,
+  },
+  modalInput: {
+    backgroundColor: Colors.dark.background,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    color: Colors.dark.text,
+    marginBottom: 20,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  modalButton: {
+    flex: 1,
+    padding: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  modalButtonCancel: {
+    backgroundColor: Colors.dark.background,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
+  },
+  modalButtonConfirm: {
+    backgroundColor: Colors.dark.primary,
+  },
+  modalButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.dark.text,
+    letterSpacing: -0.2,
+  },
+  modalButtonTextCancel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.dark.textSecondary,
+    letterSpacing: -0.2,
   },
 });
 

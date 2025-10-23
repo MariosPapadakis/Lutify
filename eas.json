@@ -26,6 +26,12 @@
         "resourceClass": "m-medium"
       },
       "android": {
+        "buildType": "app-bundle"
+      }
+    },
+    "production-apk": {
+      "extends": "production",
+      "android": {
         "buildType": "apk"
       }
     }
