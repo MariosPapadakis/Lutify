@@ -2,12 +2,22 @@ import { Paths, Directory, File } from 'expo-file-system';
 import { parseCubeLUT, ParsedLUT } from './lutParser';
 
 const LUTS_DIRECTORY = new Directory(Paths.document, 'LUTs');
+const PHOTOS_DIRECTORY = new Directory(Paths.document, 'Photos');
+const THUMBNAILS_DIRECTORY = new Directory(Paths.document, 'Thumbnails');
 
 export async function initFileSystem(): Promise<void> {
   try {
     if (!LUTS_DIRECTORY.exists) {
       LUTS_DIRECTORY.create();
       console.log('LUTs directory created');
+    }
+    if (!PHOTOS_DIRECTORY.exists) {
+      PHOTOS_DIRECTORY.create();
+      console.log('Photos directory created');
+    }
+    if (!THUMBNAILS_DIRECTORY.exists) {
+      THUMBNAILS_DIRECTORY.create();
+      console.log('Thumbnails directory created');
     }
   } catch (error) {
     console.error('Error initializing file system:', error);
@@ -90,6 +100,98 @@ export async function cleanupOrphanedFiles(validPaths: string[]): Promise<void> 
     }
   } catch (error) {
     console.error('Error cleaning up orphaned files:', error);
+  }
+}
+
+// HEIF image conversion
+export async function convertImageIfNeeded(uri: string): Promise<string> {
+  try {
+    // Check if the image is HEIF/HEIC format by file extension or mime type
+    const isHEIF = uri.toLowerCase().match(/\.(heif|heic)$/i);
+    
+    if (isHEIF) {
+      console.log('Converting HEIF image to PNG...');
+      
+      // Lazy import to avoid loading at module initialization
+      const ImageManipulator = await import('expo-image-manipulator');
+      
+      // Convert to PNG with maximum quality
+      const result = await ImageManipulator.manipulateAsync(
+        uri,
+        [], // No transformations, just format conversion
+        {
+          compress: 1, // Maximum quality
+          format: ImageManipulator.SaveFormat.PNG,
+        }
+      );
+      
+      console.log('HEIF converted to PNG:', result.uri);
+      return result.uri;
+    }
+    
+    return uri; // Return original URI if not HEIF
+  } catch (error) {
+    console.error('Error converting HEIF image:', error);
+    throw error;
+  }
+}
+
+// Photo and thumbnail management
+export async function savePhotoToLibrary(sourceUri: string, editedPhotoId: number): Promise<string> {
+  try {
+    const fileName = `photo_${editedPhotoId}.jpg`;
+    const targetFile = new File(PHOTOS_DIRECTORY, fileName);
+    
+    // Copy the photo to permanent storage
+    const sourceFile = new File(sourceUri);
+    await sourceFile.copy(targetFile);
+    
+    console.log('Photo saved to library:', targetFile.uri);
+    return targetFile.uri;
+  } catch (error) {
+    console.error('Error saving photo to library:', error);
+    throw error;
+  }
+}
+
+export async function saveThumbnail(photoUri: string, editedPhotoId: number): Promise<string> {
+  try {
+    // For now, copy the full image as thumbnail
+    // TODO: Install expo-image-manipulator for proper thumbnail generation
+    const fileName = `thumb_${editedPhotoId}.jpg`;
+    const targetFile = new File(THUMBNAILS_DIRECTORY, fileName);
+    const sourceFile = new File(photoUri);
+    await sourceFile.copy(targetFile);
+    
+    console.log('Thumbnail saved:', targetFile.uri);
+    return targetFile.uri;
+  } catch (error) {
+    console.error('Error saving thumbnail:', error);
+    throw error;
+  }
+}
+
+export async function deleteThumbnail(thumbnailUri: string): Promise<void> {
+  try {
+    const file = new File(thumbnailUri);
+    if (file.exists) {
+      file.delete();
+      console.log('Thumbnail deleted:', thumbnailUri);
+    }
+  } catch (error) {
+    console.error('Error deleting thumbnail:', error);
+  }
+}
+
+export async function deletePhotoFromLibrary(photoUri: string): Promise<void> {
+  try {
+    const file = new File(photoUri);
+    if (file.exists) {
+      file.delete();
+      console.log('Photo deleted from library:', photoUri);
+    }
+  } catch (error) {
+    console.error('Error deleting photo from library:', error);
   }
 }
 

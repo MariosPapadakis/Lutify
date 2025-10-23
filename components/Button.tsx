@@ -39,15 +39,17 @@ export default function Button({
     textStyle,
   ];
   
+  const activityIndicatorColor = variant === 'primary' ? '#000000' : '#FFFFFF';
+  
   return (
     <TouchableOpacity
       style={buttonStyle}
       onPress={onPress}
       disabled={disabled || loading}
-      activeOpacity={0.7}
+      activeOpacity={0.8}
     >
       {loading ? (
-        <ActivityIndicator color="#fff" />
+        <ActivityIndicator color={activityIndicatorColor} />
       ) : (
         <Text style={textStyleCombined}>{title}</Text>
       )}
@@ -57,12 +59,12 @@ export default function Button({
 
 const styles = StyleSheet.create({
   button: {
-    paddingVertical: 14,
+    paddingVertical: 16,
     paddingHorizontal: 24,
-    borderRadius: 8,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 48,
+    minHeight: 52,
   },
   primaryButton: {
     backgroundColor: Colors.dark.primary,
@@ -70,29 +72,30 @@ const styles = StyleSheet.create({
   secondaryButton: {
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: Colors.dark.primary,
+    borderColor: Colors.dark.borderLight,
   },
   dangerButton: {
     backgroundColor: Colors.dark.error,
   },
   disabledButton: {
-    opacity: 0.5,
+    opacity: 0.4,
   },
   text: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '500',
+    letterSpacing: -0.2,
   },
   primaryText: {
-    color: '#fff',
+    color: '#000000',
   },
   secondaryText: {
-    color: Colors.dark.primary,
+    color: Colors.dark.text,
   },
   dangerText: {
-    color: '#fff',
+    color: Colors.dark.text,
   },
   disabledText: {
-    opacity: 0.7,
+    opacity: 0.5,
   },
 });
 

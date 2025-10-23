@@ -6,18 +6,24 @@ import {
   FlatList,
   Alert,
   RefreshControl,
+  Image,
+  Dimensions,
 } from 'react-native';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import { File } from 'expo-file-system';
-import { LUT, getAllLUTs, insertLUT, deleteLUT } from '../../lib/database';
-import { saveLUTFile, loadLUTData, deleteLUTFile } from '../../lib/fileSystem';
-import { validateLUTData } from '../../lib/lutParser';
-import LUTListItem from '../../components/LUTListItem';
-import Button from '../../components/Button';
-import Colors from '../../constants/Colors';
+import { LUT, getAllLUTs, insertLUT, deleteLUT } from '../lib/database';
+import { saveLUTFile, deleteLUTFile } from '../lib/fileSystem';
+import { validateLUTData } from '../lib/lutParser';
+import LUTListItem from '../components/LUTListItem';
+import Button from '../components/Button';
+import Colors from '../constants/Colors';
 
-export default function HomeScreen() {
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const PREVIEW_HEIGHT = SCREEN_WIDTH * 0.5;
+
+export default function LUTPickerScreen() {
+  const { photoUri } = useLocalSearchParams<{ photoUri: string }>();
   const [luts, setLuts] = useState<LUT[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -72,7 +78,7 @@ export default function HomeScreen() {
       // Read and parse the file
       const sourceFile = new File(file.uri);
       const fileContent = await sourceFile.text();
-      const { parseCubeLUT } = await import('../../lib/lutParser');
+      const { parseCubeLUT } = await import('../lib/lutParser');
       const parsedLUT = parseCubeLUT(fileContent);
       
       // Validate LUT
@@ -124,60 +130,82 @@ export default function HomeScreen() {
   };
   
   const handleLUTPress = (lut: LUT) => {
-    router.push(`/editor?lutId=${lut.id}`);
+    router.push(`/editor?photoUri=${encodeURIComponent(photoUri)}&lutId=${lut.id}`);
   };
   
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
-      <Text style={styles.emptyIcon}>📁</Text>
-      <Text style={styles.emptyTitle}>No LUTs Yet</Text>
+      <Text style={styles.emptyTitle}>No LUTs</Text>
       <Text style={styles.emptyText}>
         Import your first .cube LUT file to get started
       </Text>
+      <Button
+        title="Import LUT (.cube)"
+        onPress={handleImportLUT}
+        loading={loading}
+        disabled={loading}
+        style={styles.importButton}
+      />
     </View>
   );
   
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>My LUTs</Text>
-        <Text style={styles.subtitle}>
-          {luts.length} {luts.length === 1 ? 'LUT' : 'LUTs'} imported
-        </Text>
-      </View>
-      
-      <FlatList
-        data={luts}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => (
-          <LUTListItem
-            lut={item}
-            onPress={() => handleLUTPress(item)}
-            onDelete={() => handleDeleteLUT(item)}
-          />
-        )}
-        contentContainerStyle={[
-          styles.listContent,
-          luts.length === 0 && styles.listContentEmpty,
-        ]}
-        ListEmptyComponent={renderEmptyState}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            tintColor={Colors.dark.primary}
-          />
-        }
-      />
-      
-      <View style={styles.footer}>
-        <Button
-          title="Import LUT (.cube)"
-          onPress={handleImportLUT}
-          loading={loading}
-          disabled={loading}
+      {/* Photo Preview */}
+      <View style={styles.previewContainer}>
+        <Image
+          source={{ uri: photoUri }}
+          style={styles.preview}
+          resizeMode="cover"
         />
       </View>
+      
+      {/* LUT List Section */}
+      <View style={styles.lutSection}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Select LUT</Text>
+          <Text style={styles.subtitle}>
+            {luts.length} {luts.length === 1 ? 'LUT' : 'LUTs'} available
+          </Text>
+        </View>
+        
+        <FlatList
+          data={luts}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={({ item }) => (
+            <LUTListItem
+              lut={item}
+              onPress={() => handleLUTPress(item)}
+              onDelete={() => handleDeleteLUT(item)}
+            />
+          )}
+          contentContainerStyle={[
+            styles.listContent,
+            luts.length === 0 && styles.listContentEmpty,
+          ]}
+          ListEmptyComponent={renderEmptyState}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor={Colors.dark.primary}
+            />
+          }
+        />
+      </View>
+      
+      {/* Footer with Import Button */}
+      {luts.length > 0 && (
+        <View style={styles.footer}>
+          <Button
+            title="Import LUT (.cube)"
+            onPress={handleImportLUT}
+            loading={loading}
+            disabled={loading}
+            variant="secondary"
+          />
+        </View>
+      )}
     </View>
   );
 }
@@ -187,22 +215,38 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.dark.background,
   },
+  previewContainer: {
+    width: SCREEN_WIDTH,
+    height: PREVIEW_HEIGHT,
+    backgroundColor: Colors.dark.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.dark.border,
+  },
+  preview: {
+    width: '100%',
+    height: '100%',
+  },
+  lutSection: {
+    flex: 1,
+  },
   header: {
-    padding: 20,
-    paddingBottom: 12,
+    padding: 24,
+    paddingBottom: 16,
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
+    fontSize: 20,
+    fontWeight: '600',
     color: Colors.dark.text,
-    marginBottom: 4,
+    marginBottom: 6,
+    letterSpacing: -0.3,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 13,
     color: Colors.dark.textSecondary,
+    letterSpacing: -0.1,
   },
   listContent: {
-    padding: 20,
+    padding: 24,
     paddingTop: 8,
   },
   listContentEmpty: {
@@ -213,27 +257,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 60,
   },
-  emptyIcon: {
-    fontSize: 64,
-    marginBottom: 16,
-  },
   emptyTitle: {
-    fontSize: 20,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '500',
     color: Colors.dark.text,
     marginBottom: 8,
+    letterSpacing: -0.2,
   },
   emptyText: {
-    fontSize: 14,
+    fontSize: 13,
     color: Colors.dark.textSecondary,
     textAlign: 'center',
     maxWidth: 280,
+    lineHeight: 20,
+    letterSpacing: -0.1,
+    marginBottom: 24,
+  },
+  importButton: {
+    minWidth: 200,
   },
   footer: {
-    padding: 20,
-    paddingTop: 12,
+    padding: 24,
+    paddingTop: 16,
     borderTopWidth: 1,
     borderTopColor: Colors.dark.border,
+    backgroundColor: Colors.dark.background,
   },
 });
 

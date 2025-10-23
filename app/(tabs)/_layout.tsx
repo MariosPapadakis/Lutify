@@ -6,28 +6,44 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors.dark.primary,
+        tabBarActiveTintColor: Colors.dark.text,
         tabBarInactiveTintColor: Colors.dark.textSecondary,
         tabBarStyle: {
-          backgroundColor: Colors.dark.surface,
-          borderTopColor: Colors.dark.border,
-        },
-        headerStyle: {
           backgroundColor: Colors.dark.background,
+          borderTopColor: Colors.dark.border,
+          borderTopWidth: 1,
         },
+        // headerStyle: {
+        //   backgroundColor: Colors.dark.background,
+        //   borderBottomWidth: 1,
+        //   borderBottomColor: Colors.dark.border,
+        // },
         headerTintColor: Colors.dark.text,
         headerTitleStyle: {
-          fontWeight: '600',
+          fontWeight: '500',
+          fontSize: 17,
+          letterSpacing: -0.2,
         },
+        headerShadowVisible: false,
       }}
     >
       <Tabs.Screen
-        name="index"
+        name="Home"
         options={{
-          title: 'LUTs',
-          tabBarLabel: 'LUTs',
-          tabBarIcon: ({ color, size }) => (
-            <Text style={{ fontSize: 24 }}>📁</Text>
+          headerShown: false,
+          tabBarLabel: 'Home',
+          tabBarIcon: ({ color }) => (
+            <Text style={{ fontSize: 11, color, fontWeight: '500' }}>■</Text>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="Library"
+        options={{
+          headerShown: false,
+          tabBarLabel: 'Library',
+          tabBarIcon: ({ color }) => (
+            <Text style={{ fontSize: 11, color, fontWeight: '500' }}>⊞</Text>
           ),
         }}
       />

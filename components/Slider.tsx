@@ -43,7 +43,7 @@ export default function Slider({
         step={step}
         onValueChange={onValueChange}
         minimumTrackTintColor={Colors.dark.primary}
-        maximumTrackTintColor={Colors.dark.border}
+        maximumTrackTintColor={Colors.dark.borderLight}
         thumbTintColor={Colors.dark.primary}
       />
     </View>
@@ -52,23 +52,25 @@ export default function Slider({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 20,
+    marginBottom: 24,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   label: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 13,
+    fontWeight: '500',
     color: Colors.dark.text,
+    letterSpacing: -0.1,
   },
   value: {
-    fontSize: 14,
-    fontWeight: '500',
+    fontSize: 13,
+    fontWeight: '400',
     color: Colors.dark.textSecondary,
+    letterSpacing: -0.1,
   },
   slider: {
     width: '100%',

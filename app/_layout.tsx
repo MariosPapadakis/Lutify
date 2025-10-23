@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Stack } from 'expo-router';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { Stack, useRouter, useSegments } from 'expo-router';
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { initDatabase, getAllLUTs } from '../lib/database';
 import { initFileSystem, cleanupOrphanedFiles } from '../lib/fileSystem';
 import Colors from '../constants/Colors';
@@ -54,34 +55,46 @@ export default function RootLayout() {
   }
   
   return (
-    <Stack
-      screenOptions={{
-        headerStyle: {
-          backgroundColor: Colors.dark.background,
-        },
-        headerTintColor: Colors.dark.text,
-        headerTitleStyle: {
-          fontWeight: '600',
-        },
-        contentStyle: {
-          backgroundColor: Colors.dark.background,
-        },
-      }}
-    >
-      <Stack.Screen
-        name="(tabs)"
-        options={{
-          headerShown: false,
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <Stack
+        screenOptions={{
+          headerStyle: {
+            backgroundColor: Colors.dark.background,
+          } as any,
+          headerTintColor: Colors.dark.text,
+          headerTitleStyle: {
+            fontWeight: '500',
+            fontSize: 17,
+          } as any,
+          headerShadowVisible: false,
+          contentStyle: {
+            backgroundColor: Colors.dark.background,
+          },
         }}
-      />
-      <Stack.Screen
-        name="editor"
-        options={{
-          title: 'Editor',
-          presentation: 'card',
-        }}
-      />
-    </Stack>
+      >
+        <Stack.Screen
+          name="(tabs)"
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="lut-picker"
+          options={{
+            title: 'Select LUT',
+            presentation: 'card',
+          }}
+        />
+        <Stack.Screen
+          name="editor"
+          options={{
+            title: 'Editor',
+            presentation: 'card',
+            headerBackTitle: 'Back',
+          }}
+        />
+      </Stack>
+    </GestureHandlerRootView>
   );
 }
 

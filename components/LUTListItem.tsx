@@ -35,7 +35,7 @@ export default function LUTListItem({ lut, onPress, onDelete }: LUTListItemProps
   };
   
   return (
-    <TouchableOpacity style={styles.container} onPress={onPress} activeOpacity={0.7}>
+    <TouchableOpacity style={styles.container} onPress={onPress} activeOpacity={0.9}>
       <View style={styles.content}>
         <Text style={styles.name} numberOfLines={1}>
           {lut.name}
@@ -50,8 +50,9 @@ export default function LUTListItem({ lut, onPress, onDelete }: LUTListItemProps
         style={styles.deleteButton}
         onPress={handleDelete}
         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        activeOpacity={0.6}
       >
-        <Text style={styles.deleteIcon}>✕</Text>
+        <Text style={styles.deleteIcon}>×</Text>
       </TouchableOpacity>
     </TouchableOpacity>
   );
@@ -62,18 +63,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.dark.surface,
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
+    padding: 20,
+    borderRadius: 8,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
   },
   content: {
     flex: 1,
   },
   name: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '500',
     color: Colors.dark.text,
-    marginBottom: 4,
+    marginBottom: 6,
+    letterSpacing: -0.2,
   },
   details: {
     flexDirection: 'row',
@@ -83,20 +87,19 @@ const styles = StyleSheet.create({
   detailText: {
     fontSize: 12,
     color: Colors.dark.textSecondary,
+    letterSpacing: -0.1,
   },
   deleteButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: Colors.dark.error,
+    width: 36,
+    height: 36,
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 12,
   },
   deleteIcon: {
-    fontSize: 18,
-    color: '#fff',
-    fontWeight: '600',
+    fontSize: 24,
+    color: Colors.dark.textSecondary,
+    fontWeight: '300',
   },
 });
 
