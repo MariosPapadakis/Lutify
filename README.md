@@ -63,7 +63,13 @@ Screenshots are available in the `screenshots_appstore/` directory.
 
 1. **Clone the repository:**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/<username>/Lutify.git
+   cd Lutify
+   ```
+   
+   Or using SSH:
+   ```bash
+   git clone git@github.com:<username>/Lutify.git
    cd Lutify
    ```
 
@@ -74,7 +80,7 @@ Screenshots are available in the `screenshots_appstore/` directory.
    # Edit app.json and replace placeholders (YOUR_EXPO_USERNAME, YOUR_APPLE_TEAM_ID, YOUR_EAS_PROJECT_ID)
    ```
 
-   > **Note:** See the [Configuration for Public Repository](#configuration-for-public-repository) section for details on required values.
+   > **Note:** See the [Configuration](#configuration) section for details on required values.
 
 3. **Install dependencies:**
    ```bash
@@ -223,9 +229,9 @@ The `eas.json` file contains profiles for:
 - **LUT Application** - < 16ms per frame (60fps target)
 - **Memory Efficiency** - Optimized texture handling and cleanup
 
-## Configuration for Public Repository
+## Configuration
 
-**⚠️ Important:** Before making this repository public, update the following configuration values:
+This repository includes an `app.json.example` template file. To get started, you'll need to create your own `app.json` with your credentials.
 
 ### Setting Up Configuration
 
@@ -235,14 +241,14 @@ The `eas.json` file contains profiles for:
    ```
 
 2. **Update `app.json` with your values:**
-   - **Line 5** - `"owner"`: Replace `"YOUR_EXPO_USERNAME"` with your Expo username or remove for public repos
+   - **Line 5** - `"owner"`: Replace `"YOUR_EXPO_USERNAME"` with your Expo username
    - **Line 28** - `"appleTeamId"`: Replace `"YOUR_APPLE_TEAM_ID"` with your Apple Developer Team ID (10 characters, e.g., `ABC123DEF4`)
    - **Line 94** - `"projectId"`: Replace `"YOUR_EAS_PROJECT_ID"` with your EAS project ID (UUID format)
 
-   > **Note:** An `app.json.example` file is provided as a template with placeholders for all sensitive values.
+   > **Note:** The `app.json` file is excluded from git (via `.gitignore`) to protect your credentials. Each developer should maintain their own local copy.
 
 3. **Update developer information (optional):**
-   - **`app/(tabs)/Settings/index.tsx` Line 152** - Update the hardcoded developer name if desired
+   - **`app/(tabs)/Settings/index.tsx` Line 152** - Update the developer name if desired
 
 ### Getting Your Credentials
 
@@ -250,14 +256,16 @@ The `eas.json` file contains profiles for:
 - **Apple Team ID**: Found in [Apple Developer Account](https://developer.apple.com/account) → Membership section
 - **EAS Project ID**: Generated when you run `eas init` or found in your Expo dashboard
 
-### Files Already Protected by `.gitignore`
+### Protected Files
 
-- `app.json` - Expo configuration with sensitive credentials (already ignored)
-- `android/app/debug.keystore` - Debug signing key (already ignored)
-- `/ios` and `/android` directories - Native build artifacts (already ignored)
-- `.env*.local` - Local environment files (already ignored)
+The following files are excluded from version control (via `.gitignore`) to protect sensitive information:
 
-> **Note:** Keep your `app.json` file local with your actual credentials. The `app.json.example` file serves as a template in the repository.
+- `app.json` - Expo configuration with your credentials (each developer maintains their own copy)
+- `android/app/debug.keystore` - Debug signing key
+- `/ios` and `/android` directories - Native build artifacts
+- `.env*.local` - Local environment files
+
+> **Note:** Always keep your `app.json` file local with your actual credentials. Never commit it to the repository. The `app.json.example` file serves as a template for all developers.
 
 ## Permissions
 

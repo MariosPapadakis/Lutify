@@ -44,3 +44,5 @@ app.json
 # generated native folders
 /ios
 /android
+
+.cursor/
