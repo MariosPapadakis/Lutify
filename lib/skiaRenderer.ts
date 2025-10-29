@@ -151,8 +151,6 @@ export function convertCubeLUTToImageData(lutData: Float32Array, size: number): 
   
   const imageData = new Uint8Array(width * height * 4);
   
-  console.log(`Converting LUT to image: ${width}x${height} (${gridDim}x${gridDim} grid) for size ${size}`);
-  
   // Initialize to transparent
   imageData.fill(0);
   

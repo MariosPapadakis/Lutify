@@ -59,7 +59,6 @@ export async function initDatabase(): Promise<void> {
       await db.execAsync(`
         ALTER TABLE LUTs ADD COLUMN imagePath TEXT NOT NULL DEFAULT '';
       `);
-      console.log('Added imagePath column to LUTs table');
     } catch (error) {
       // Column might already exist, ignore error
     }

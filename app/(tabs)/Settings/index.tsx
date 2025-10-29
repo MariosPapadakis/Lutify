@@ -6,33 +6,15 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
-  Platform,
 } from 'react-native';
-import * as Linking from 'expo-linking';
-import Symbol from '../../../components/Symbol';
 import Colors from '../../../constants/Colors';
 import { getAllLUTs, deleteLUT, getAllEditedPhotos, deleteEditedPhoto } from '../../../lib/database';
 import { deleteLUTFile, deleteThumbnail, deletePhotoFromLibrary } from '../../../lib/fileSystem';
 
 const APP_VERSION = '1.0.0';
-const BUY_ME_COFFEE_URL = 'https://buymeacoffee.com/marios.dev'; // Replace with actual URL
 
 export default function SettingsScreen() {
   const [isClearing, setIsClearing] = useState(false);
-
-  const handleBuyMeCoffee = async () => {
-    try {
-      const supported = await Linking.canOpenURL(BUY_ME_COFFEE_URL);
-      if (supported) {
-        await Linking.openURL(BUY_ME_COFFEE_URL);
-      } else {
-        Alert.alert('Error', 'Unable to open link');
-      }
-    } catch (error) {
-      console.error('Error opening Buy Me a Coffee:', error);
-      Alert.alert('Error', 'Failed to open donation link');
-    }
-  };
 
   const handleClearAllLUTs = () => {
     Alert.alert(
@@ -119,30 +101,6 @@ export default function SettingsScreen() {
         contentInsetAdjustmentBehavior="automatic"
       >
         <View style={styles.content}>
-          {/* Support Section */}
-          <View style={styles.section}>
-            <Text style={styles.sectionHeader}>SUPPORT</Text>
-            <TouchableOpacity
-              style={styles.coffeeButton}
-              onPress={handleBuyMeCoffee}
-              activeOpacity={0.7}
-            >
-              <Symbol 
-                name="cup.and.saucer.fill" 
-                size={32}
-                tintColor="#000000"
-                style={styles.coffeeIcon}
-                fallback={<Text style={styles.coffeeIconText}>☕</Text>}
-              />
-              <View style={styles.coffeeTextContainer}>
-                <Text style={styles.coffeeButtonText}>Buy me a Coffee</Text>
-                <Text style={styles.coffeeButtonSubtext}>
-                  Support the developer and app
-                </Text>
-              </View>
-            </TouchableOpacity>
-          </View>
-
           {/* Preferences Section */}
           <View style={styles.section}>
             <Text style={styles.sectionHeader}>PREFERENCES</Text>
@@ -256,39 +214,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.dark.border,
     overflow: 'hidden',
-  },
-  coffeeButton: {
-    backgroundColor: '#FFDD00',
-    borderRadius: 12,
-    padding: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  coffeeIcon: {
-    marginRight: 16,
-  },
-  coffeeIconText: {
-    fontSize: 32,
-  },
-  coffeeTextContainer: {
-    flex: 1,
-  },
-  coffeeButtonText: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#000000',
-    marginBottom: 2,
-    letterSpacing: -0.2,
-  },
-  coffeeButtonSubtext: {
-    fontSize: 13,
-    color: '#333333',
-    letterSpacing: -0.1,
   },
   settingsButton: {
     padding: 16,

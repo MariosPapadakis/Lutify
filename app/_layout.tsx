@@ -15,17 +15,14 @@ export default function RootLayout() {
       try {
         // Initialize database
         await initDatabase();
-        console.log('Database initialized');
         
         // Initialize file system
         await initFileSystem();
-        console.log('File system initialized');
         
         // Clean up orphaned files
         const luts = await getAllLUTs();
         const validPaths = luts.map(lut => lut.path);
         await cleanupOrphanedFiles(validPaths);
-        console.log('Cleanup completed');
         
         setIsReady(true);
       } catch (err) {

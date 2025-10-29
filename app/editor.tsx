@@ -212,8 +212,6 @@ export default function EditorScreen() {
       setSaturation(editedPhoto.saturation);
       setTemperature(editedPhoto.temperature);
       setTint(editedPhoto.tint);
-      
-      console.log('Edited photo loaded:', editedPhoto.name);
     } catch (error) {
       console.error('Error loading edited photo:', error);
       Alert.alert('Error', 'Failed to load edited photo');
@@ -239,13 +237,11 @@ export default function EditorScreen() {
         const imageData = await loadLUTImage(lut.imagePath);
         // Reconstruct the image data object (512x512 for 64-size LUT)
         setLutImageData({ data: imageData, width: 512, height: 512 });
-        console.log('LUT image loaded from cache:', lut.name);
       } else {
         // Fallback: convert on-the-fly (for old LUTs without imagePath)
-        const lutData = await loadLUTData(lut.path);
-        const imageData = convertCubeLUTToImageData(lutData.data, lutData.size);
-        setLutImageData(imageData);
-        console.log('LUT converted on-the-fly:', lut.name);
+          const lutData = await loadLUTData(lut.path);
+          const imageData = convertCubeLUTToImageData(lutData.data, lutData.size);
+          setLutImageData(imageData);
       }
     } catch (error) {
       console.error('Error loading LUT:', error);
@@ -418,8 +414,6 @@ export default function EditorScreen() {
       const imageHeight = photoImage.height();
       const lutWidth = lutImage.width();
       const lutHeight = lutImage.height();
-      
-      console.log('Exporting at full resolution:', { imageWidth, imageHeight });
       
       // Create offscreen surface at original dimensions
       const surface = Skia.Surface.MakeOffscreen(imageWidth, imageHeight);

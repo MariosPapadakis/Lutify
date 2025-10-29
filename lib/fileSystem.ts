@@ -10,19 +10,15 @@ export async function initFileSystem(): Promise<void> {
   try {
     if (!LUTS_DIRECTORY.exists) {
       LUTS_DIRECTORY.create();
-      console.log('LUTs directory created');
     }
     if (!LUT_IMAGES_DIRECTORY.exists) {
       LUT_IMAGES_DIRECTORY.create();
-      console.log('LUT Images directory created');
     }
     if (!PHOTOS_DIRECTORY.exists) {
       PHOTOS_DIRECTORY.create();
-      console.log('Photos directory created');
     }
     if (!THUMBNAILS_DIRECTORY.exists) {
       THUMBNAILS_DIRECTORY.create();
-      console.log('Thumbnails directory created');
     }
   } catch (error) {
     console.error('Error initializing file system:', error);
@@ -51,7 +47,6 @@ export async function saveLUTFile(sourceUri: string, fileName: string): Promise<
     const sourceFile = new File(sourceUri);
     await sourceFile.copy(targetFile);
     
-    console.log('LUT file saved to:', targetFile.uri);
     return targetFile.uri;
   } catch (error) {
     console.error('Error saving LUT file:', error);
@@ -79,7 +74,6 @@ export async function saveLUTImage(imageData: Uint8Array, lutId: number): Promis
     // Save the raw image data
     await targetFile.write(imageData);
     
-    console.log('LUT image saved:', targetFile.uri);
     return targetFile.uri;
   } catch (error) {
     console.error('Error saving LUT image:', error);
@@ -104,7 +98,6 @@ export async function deleteLUTFile(path: string): Promise<void> {
     
     if (file.exists) {
       file.delete();
-      console.log('LUT file deleted:', path);
     }
   } catch (error) {
     console.error('Error deleting LUT file:', error);
@@ -127,7 +120,6 @@ export async function cleanupOrphanedFiles(validPaths: string[]): Promise<void> 
     for (const item of dirContents) {
       if (item instanceof File && !validPaths.includes(item.uri)) {
         item.delete();
-        console.log('Orphaned file removed:', item.uri);
       }
     }
   } catch (error) {
@@ -142,14 +134,11 @@ export async function convertImageIfNeeded(uri: string): Promise<string> {
     const isPNG = uri.toLowerCase().match(/\.png$/i);
     
     if (isPNG) {
-      console.log('Image is already PNG, skipping conversion');
       return uri;
     }
     
     // Convert all non-PNG images (HEIF, HEIC, JPEG, etc.) to PNG
     // This ensures consistent behavior and avoids Skia compatibility issues
-    console.log('Converting image to PNG...');
-    
     // Lazy import to avoid loading at module initialization
     const { manipulateAsync, SaveFormat } = await import('expo-image-manipulator');
     
@@ -163,7 +152,6 @@ export async function convertImageIfNeeded(uri: string): Promise<string> {
       }
     );
     
-    console.log('Image converted to PNG:', result.uri);
     return result.uri;
   } catch (error) {
     console.error('Error converting image:', error);
@@ -181,7 +169,6 @@ export async function savePhotoToLibrary(sourceUri: string, editedPhotoId: numbe
     const sourceFile = new File(sourceUri);
     await sourceFile.copy(targetFile);
     
-    console.log('Photo saved to library:', targetFile.uri);
     return targetFile.uri;
   } catch (error) {
     console.error('Error saving photo to library:', error);
@@ -198,7 +185,6 @@ export async function saveThumbnail(photoUri: string, editedPhotoId: number): Pr
     const sourceFile = new File(photoUri);
     await sourceFile.copy(targetFile);
     
-    console.log('Thumbnail saved:', targetFile.uri);
     return targetFile.uri;
   } catch (error) {
     console.error('Error saving thumbnail:', error);
@@ -211,7 +197,6 @@ export async function deleteThumbnail(thumbnailUri: string): Promise<void> {
     const file = new File(thumbnailUri);
     if (file.exists) {
       file.delete();
-      console.log('Thumbnail deleted:', thumbnailUri);
     }
   } catch (error) {
     console.error('Error deleting thumbnail:', error);
@@ -223,7 +208,6 @@ export async function deletePhotoFromLibrary(photoUri: string): Promise<void> {
     const file = new File(photoUri);
     if (file.exists) {
       file.delete();
-      console.log('Photo deleted from library:', photoUri);
     }
   } catch (error) {
     console.error('Error deleting photo from library:', error);
